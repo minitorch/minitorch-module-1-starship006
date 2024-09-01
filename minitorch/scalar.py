@@ -18,6 +18,7 @@ from .scalar_functions import (
     ReLU,
     ScalarFunction,
     Sigmoid,
+    wrap_tuple,
 )
 
 ScalarLike = Union[float, int, "Scalar"]
@@ -160,11 +161,16 @@ class Scalar:
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
         history = self.history
         assert history is not None
+        if history.last_fn is None:
+            print("woah")
+        else:
+            print("nah")
         assert history.last_fn is not None
         assert history.ctx is not None
         
         gradients = history.last_fn.backward(history.ctx, d_output)
-        return zip(history.inputs, gradients)
+        wrapped_gradients = wrap_tuple(gradients)
+        return zip(history.inputs, wrapped_gradients)
         
         
 
