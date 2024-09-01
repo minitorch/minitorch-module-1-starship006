@@ -161,10 +161,6 @@ class Scalar:
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
         history = self.history
         assert history is not None
-        if history.last_fn is None:
-            print("woah")
-        else:
-            print("nah")
         assert history.last_fn is not None
         assert history.ctx is not None
         
