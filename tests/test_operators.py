@@ -5,6 +5,7 @@ from hypothesis import given
 from hypothesis.strategies import lists
 
 from minitorch import MathTest
+import minitorch
 from minitorch.operators import (
     add,
     addLists,
@@ -22,7 +23,7 @@ from minitorch.operators import (
     relu,
     relu_back,
     sigmoid,
-    sum,
+    is_close
 )
 
 from .strategies import assert_close, small_floats
@@ -33,7 +34,7 @@ from .strategies import assert_close, small_floats
 @pytest.mark.task0_1
 @given(small_floats, small_floats)
 def test_same_as_python(x: float, y: float) -> None:
-    "Check that the main operators all return the same value of the python version"
+    """Check that the main operators all return the same value of the python version"""
     assert_close(mul(x, y), x * y)
     assert_close(add(x, y), x + y)
     assert_close(neg(x), -x)
@@ -69,7 +70,7 @@ def test_id(a: float) -> None:
 @pytest.mark.task0_1
 @given(small_floats)
 def test_lt(a: float) -> None:
-    "Check that a - 1.0 is always less than a"
+    """Check that a - 1.0 is always less than a"""
     assert lt(a - 1.0, a) == 1.0
     assert lt(a, a - 1.0) == 0.0
 
@@ -107,47 +108,45 @@ def test_sigmoid(a: float) -> None:
     * It crosses 0 at 0.5
     * It is  strictly increasing.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    assert (0 <= sigmoid(a) <= 1.0)
+    assert is_close(1 - sigmoid(a), sigmoid(-1 * a))
+    assert (sigmoid(a - 0.2) <= sigmoid(a)) and (sigmoid(a) <= sigmoid(a + 0.2))
 
 
 @pytest.mark.task0_2
 @given(small_floats, small_floats, small_floats)
 def test_transitive(a: float, b: float, c: float) -> None:
-    "Test the transitive property of less-than (a < b and b < c implies a < c)"
-    raise NotImplementedError("Need to include this file from past assignment.")
-
-
-@pytest.mark.task0_2
-def test_symmetric() -> None:
-    """
-    Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
-    gives the same value regardless of the order of its input.
-    """
-    raise NotImplementedError("Need to include this file from past assignment.")
-
+    """Test the transitive property of less-than (a < b and b < c implies a < c)"""
+    if lt(a, b) == 1.0 and lt(b, c) == 1.0:
+        assert lt(a, c) == 1.0
 
 @pytest.mark.task0_2
-def test_distribute() -> None:
-    r"""
-    Write a test that ensures that your operators distribute, i.e.
-    :math:`z \times (x + y) = z \times x + z \times y`
-    """
-    raise NotImplementedError("Need to include this file from past assignment.")
-
+@given(small_floats, small_floats)
+def test_symmetric(a: float, b: float) -> None:
+    """Test that mul is symmetric, i.e. gives the same value regardless of the order of its input."""
+    assert_close(mul(a, b), mul(b, a))
 
 @pytest.mark.task0_2
-def test_other() -> None:
-    """
-    Write a test that ensures some other property holds for your functions.
-    """
-    raise NotImplementedError("Need to include this file from past assignment.")
+@given(small_floats, small_floats, small_floats)
+def test_distribute(x: float, y: float, z: float) -> None:
+    """Test that mul distributes over add, i.e. z * (x + y) = z * x + z * y"""
+    left = mul(z, add(x, y))
+    right = add(mul(z, x), mul(z, y))
+    assert_close(left, right)
+
+@pytest.mark.task0_2
+@given(small_floats)
+def test_other(x: float) -> None:
+    """Test that the inverse of the inverse of a number is the number itself."""
+    # We'll use a small threshold to avoid division by very small numbers
+    if abs(x) > 1e-3:
+        assert_close(inv(inv(x)), x)
 
 
 # ## Task 0.3  - Higher-order functions
 
 # These tests check that your higher-order functions obey basic
 # properties.
-
 
 @pytest.mark.task0_3
 @given(small_floats, small_floats, small_floats, small_floats)
@@ -165,16 +164,27 @@ def test_zip_with(a: float, b: float, c: float, d: float) -> None:
 )
 def test_sum_distribute(ls1: List[float], ls2: List[float]) -> None:
     """
-    Write a test that ensures that the sum of `ls1` plus the sum of `ls2`
+    Test that ensures that the sum of `ls1` plus the sum of `ls2`
     is the same as the sum of each element of `ls1` plus each element of `ls2`.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    # Calculate the sum of ls1 and ls2 separately
+    sum_of_sums = sum(ls1) + sum(ls2)
+    
+    # Calculate the sum of element-wise addition
+    element_wise_sum = sum(a + b for a, b in zip(ls1, ls2))
+    
+    # Assert that both sums are equal
+    assert is_close(sum_of_sums, element_wise_sum), f"Sum distribution failed: {sum_of_sums} != {element_wise_sum}"
+    
+    print("Test passed: Sum distribution property holds.")
+    
+    
 
 
 @pytest.mark.task0_3
 @given(lists(small_floats))
 def test_sum(ls: List[float]) -> None:
-    assert_close(sum(ls), sum(ls))
+    assert_close(sum(ls), minitorch.operators.sum(ls))
 
 
 @pytest.mark.task0_3

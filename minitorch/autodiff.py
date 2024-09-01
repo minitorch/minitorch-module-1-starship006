@@ -22,8 +22,15 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError("Need to implement for Task 1.1")
+    left_point = vals[arg] - epsilon
+    new_vals_left = list(vals)
+    new_vals_left[arg] = left_point
+    
+    right_point = vals[arg] + epsilon
+    new_vals_right = list(vals)
+    new_vals_right[arg] = right_point
+    
+    return (f(*new_vals_right) - f(*new_vals_left)) / (2 * epsilon)
 
 
 variable_count = 1
@@ -61,8 +68,19 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    visited = []
+    order = []
+
+    def visit(var: Variable):
+        if var.unique_id in visited or var.is_constant():
+            return
+        visited.append(var.unique_id)
+        for parent in var.parents:
+            visit(parent)
+        order.append(var)
+
+    visit(variable)
+    return reversed(order)
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -76,8 +94,22 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    ordered_vars = topological_sort(variable)
+    var_to_grads = {variable.unique_id: deriv}
+    for var_to_backprop in ordered_vars:
+        d_output = var_to_grads[var_to_backprop.unique_id]
+        if var_to_backprop.is_leaf():
+            var_to_backprop.accumulate_derivative(d_output)
+        else:
+            vars_to_grads = var_to_backprop.chain_rule(d_output)
+            for parent_var, grad in vars_to_grads:
+                assert parent_var is not var_to_backprop, "what"
+                if parent_var.unique_id in var_to_grads:
+                    var_to_grads[parent_var.unique_id] += grad
+                else:
+                    var_to_grads[parent_var.unique_id] = grad
+        
+        
 
 
 @dataclass
