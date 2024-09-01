@@ -158,13 +158,15 @@ class Scalar:
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
-        h = self.history
-        assert h is not None
-        assert h.last_fn is not None
-        assert h.ctx is not None
-
-        # TODO: Implement for Task 1.3.
-        raise NotImplementedError("Need to implement for Task 1.3")
+        history = self.history
+        assert history is not None
+        assert history.last_fn is not None
+        assert history.ctx is not None
+        
+        gradients = history.last_fn.backward(history.ctx, d_output)
+        return zip(history.inputs, gradients)
+        
+        
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """
